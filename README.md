@@ -84,14 +84,41 @@ All settings are read from environment variables.
 
 ## Development
 
+`run.sh` creates a virtual environment, installs dependencies, and starts the server with hot-reload — no manual setup needed.
+
 ```bash
-pip install -r requirements-dev.txt
+# Basic usage (creates .venv, installs deps, starts server)
+./run.sh
 
-# Run tests (no GPU or model required)
-pytest
+# Include dev dependencies (pytest, httpx)
+./run.sh --dev
 
-# Run integration test (requires model downloaded)
-pytest -m integration
+# Force CPU, custom port, specific model
+./run.sh --device cpu --port 8080 --model /models/Qwen3-TTS-12Hz-1.7B-CustomVoice
+
+# Rebuild venv from scratch
+./run.sh --reset --dev
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--dev` | Install `requirements-dev.txt` (adds pytest, httpx) |
+| `--device DEVICE` | Device override: `cpu`, `cuda`, `mps` |
+| `--port PORT` | Port to listen on (default: `8000`) |
+| `--model PATH` | Model name or local path |
+| `--reset` | Delete `.venv` and reinstall from scratch |
+
+**Running tests**
+
+```bash
+# Unit tests (no GPU or model required)
+./run.sh --dev  # first run to set up venv
+.venv/bin/pytest
+
+# Integration tests (requires model downloaded)
+.venv/bin/pytest -m integration
 ```
 
 ## Project structure
