@@ -1,0 +1,9 @@
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests that load the real model (deselect with '-m not integration')",
+]
+# Run only non-integration tests by default.
+addopts = "-m 'not integration'"

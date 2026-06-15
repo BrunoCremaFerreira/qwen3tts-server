@@ -1,2 +1,107 @@
 # qwen3tts-server
-OpenAI-compatible API server for Qwen3-TTS, enabling local text-to-speech generation via a simple /v1/audio/speech endpoint. Built with FastAPI and Docker support, it provides GPU-accelerated, self-hosted TTS with easy integration into existing OpenAI-style workflows and tools.
+
+OpenAI-compatible API server for [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS), enabling local text-to-speech generation via a `/v1/audio/speech` endpoint. Built with FastAPI and packaged in Docker, it integrates with any OpenAI-compatible client without code changes.
+
+## Requirements
+
+- **CPU**: supported (slower inference)
+- **GPU**: NVIDIA RTX with CUDA 12.4+ (recommended)
+
+## Quick start
+
+### GPU (recommended)
+
+```bash
+# Download model weights once
+pip install huggingface_hub
+huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice --local-dir ./models/Qwen3-TTS-12Hz-1.7B-CustomVoice
+
+# Start the server
+docker compose up
+```
+
+### CPU
+
+```bash
+docker build -f Dockerfile.cpu -t qwen3tts-server:cpu .
+docker run -p 8000:8000 \
+  -v ./models:/models \
+  -e MODEL_NAME_OR_PATH=/models/Qwen3-TTS-12Hz-1.7B-CustomVoice \
+  -e DEVICE=cpu \
+  qwen3tts-server:cpu
+```
+
+## API
+
+### `POST /v1/audio/speech`
+
+Compatible with the [OpenAI TTS API](https://platform.openai.com/docs/api-reference/audio/createSpeech).
+
+**Request body**
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `model` | string | yes | — | Accepted but ignored (fixed to Qwen3-TTS) |
+| `input` | string | yes | — | Text to synthesize (1–4096 characters) |
+| `voice` | string | yes | — | One of `alloy`, `echo`, `fable`, `nova`, `onyx`, `shimmer` |
+| `response_format` | string | no | `wav` | One of `wav`, `mp3`, `opus`, `flac`, `pcm` |
+| `speed` | float | no | `1.0` | Accepted for compatibility; not applied by the model |
+| `instructions` | string | no | `null` | Style or tone instruction (e.g. `"speak slowly and clearly"`) |
+
+**Example**
+
+```bash
+curl http://localhost:8000/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{"model": "tts-1", "input": "Hello!", "voice": "alloy"}' \
+  --output speech.wav
+```
+
+**Voice mapping**
+
+| OpenAI voice | Qwen3-TTS speaker |
+|---|---|
+| `alloy` | Chelsie |
+| `echo` | Ethan |
+| `fable` | Cove |
+| `nova` | Sora |
+| `onyx` | Luca |
+| `shimmer` | Aoede |
+
+## Configuration
+
+All settings are read from environment variables.
+
+| Variable | Default | Description |
+|---|---|---|
+| `MODEL_NAME_OR_PATH` | `Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice` | HuggingFace repo or local path |
+| `DEVICE` | auto-detect | `cpu`, `cuda:0`, `cuda:1`, etc. |
+| `PORT` | `8000` | Listening port |
+| `HOST` | `0.0.0.0` | Bind address |
+| `WORKERS` | `1` | Uvicorn workers (keep at 1 for GPU) |
+| `LOG_LEVEL` | `info` | Uvicorn log level |
+| `HF_HOME` | — | HuggingFace cache directory |
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+
+# Run tests (no GPU or model required)
+pytest
+
+# Run integration test (requires model downloaded)
+pytest -m integration
+```
+
+## Project structure
+
+```
+src/
+├── main.py      # FastAPI app and startup lifespan
+├── config.py    # Environment-based settings
+├── model.py     # Model loading and inference
+├── audio.py     # Audio encoding (WAV/MP3/OPUS/FLAC/PCM)
+├── router.py    # POST /v1/audio/speech endpoint
+└── tests/
+```
