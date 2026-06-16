@@ -2,7 +2,7 @@ FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.11 \
-        python3.11-pip \
+        python3-pip \
         libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
