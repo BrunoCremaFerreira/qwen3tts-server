@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.11 \
         python3-pip \
         libsndfile1 \
+        sox \
     && rm -rf /var/lib/apt/lists/*
 
 # Install torch with CUDA 12.4 support first so the index-url is applied only
@@ -14,9 +15,10 @@ RUN python3.11 -m pip install --no-cache-dir torch \
 WORKDIR /app
 
 COPY requirements.txt .
+RUN python3.11 -m pip install --no-cache-dir numpy
 RUN python3.11 -m pip install --no-cache-dir \
         --constraint /dev/null \
-        $(grep -v '^torch' requirements.txt | tr '\n' ' ')
+        $(grep -v '^torch\|^numpy' requirements.txt | tr '\n' ' ')
 
 COPY src/ src/
 
